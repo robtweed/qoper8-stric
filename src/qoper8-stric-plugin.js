@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-16 September 2023
+17 September 2023
 
 */
 
@@ -71,7 +71,18 @@ function QOper8_Plugin (router, options) {
         return Response.json(res, {status: status});
       }
       else {
-        return Response.json(res);
+        let options;
+        if (res.http_response) {
+          if (res.http_response.statusCode) {
+            options = {status: res.http_response.statusCode}
+          }
+          if (res.http_response.headers) {
+            if (!options) options = {};
+            options.headers = res.http_response.headers;
+          }
+          delete res.http_response;
+        }
+        return Response.json(res, options);
       }
     });
   }
