@@ -1,0 +1,30 @@
+{
+  "name": "qoper8-stric",
+  "version": "0.0.1",
+  "description": "QOper8 Plugin for Stric",
+  "type": "module",
+  "main": "./src/qoper8-stric-plugin.js",
+  "exports": {
+    ".": "./src/qoper8-stric-plugin.js"
+  },
+  "engines" : {
+    "node" : ">=18.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/robtweed/qoper8-stric.git"
+  },
+  "author": "Rob Tweed, MGateway Ltd",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@stricjs/utils": "latest",
+    "qoper8-ww": "latest"
+  },
+  "bugs": {
+    "url": "https://github.com/robtweed/qoper8-stric/issues"
+  },
+  "homepage": "https://github.com/robtweed/qoper8-stric#readme"
+}
