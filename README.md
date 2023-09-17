@@ -191,7 +191,6 @@ For example:
               "user-agent": "curl/7.74.0",
               "accept": "*/*"
             },
-            "ip": "127.0.0.1",
             "hostname": "127.0.0.1:3000",
             "protocol": "http",
             "url": "/user/rob",
