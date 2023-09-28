@@ -384,6 +384,29 @@ For example:
       });
 
 
+## Performance
+
+Routing a request to be handled in a WebWorker inevitably adds some additional overhead to the round-trip
+(ie incoming request => outgoing response) time.  The question is how much?
+
+Some simple tests were performed using *cURL* making *localhost* calls to a Stric script with two 
+"hello world" API routes, one running within the main thread, the other routed via QOper8 to a WebWorker.
+
+The tests were run on a Ubuntu Linux VM running on a basic M1 Mac Mini using Parallels.
+
+The cURL command used for each API route was of the form:
+
+        curl -o /dev/null -s -w 'Total: %{time_total}s\n' http://localhost:3000/helloworld
+
+
+Average round-trip times were:
+
+- main thread: 0.0024 sec  (range: 0.0014 - 0.0028)
+- WebWorker:   0.0046 sec  (range: 0.0038 - 0.0053)
+
+So on average on this platform, processing a request in a WebWorker added 2ms to the total round-trip time.
+
+
 
 ## License
 

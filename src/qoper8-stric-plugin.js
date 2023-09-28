@@ -23,23 +23,42 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-17 September 2023
+26 September 2023
 
 */
 
 import {query as parse} from '@stricjs/utils';
 import {URL} from 'url';
 import crypto from 'crypto';
-import {QOper8} from 'qoper8-ww';
+import path from 'path';
 
-function QOper8_Plugin (router, options) {
+async function QOper8_Plugin (router, options) {
 
-  const qoper8 = new QOper8(options);
+  let qmodule;
+  options.exitOnStop = true;
+
+  let mode = options.mode || 'webworker';
+  if (mode === 'child_process') {
+    qmodule = await import('qoper8-cp');
+  }
+  else if (mode === 'webworker') {
+    qmodule = await import('qoper8-ww');
+  } 
+  else {
+    qmodule = await import('qoper8-wt');
+  }
+
+  const qoper8 = new qmodule.QOper8(options);
 
   qoper8.routeToName = new Map();
   for (let route of options.workerHandlersByRoute) {
     let name = crypto.createHash('sha1').update(route.url).digest('hex');
-    qoper8.handlersByMessageType.set(name, route.handlerPath);
+    if (mode === 'webworker') {
+      qoper8.handlersByMessageType.set(name, route.handlerPath);
+    }
+    else {
+      qoper8.handlersByMessageType.set(name, {module: route.handlerPath});
+    }
 
     router[route.method](route.url, async (req) => {
       let url = new URL(req.url);
@@ -86,6 +105,8 @@ function QOper8_Plugin (router, options) {
       }
     });
   }
+
+  return qoper8;
 
 };
 
