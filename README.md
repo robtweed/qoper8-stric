@@ -14,22 +14,23 @@ Google Group for discussions, support, advice etc: [http://groups.google.co.uk/g
 the extremely high-performance Web Framework that has been specifically written for the Bun.js Runtime.
 
 *qoper8-stric* integrates the 
-[*QOper8*](https://github.com/robtweed/qoper8-ww) Module with Stric, to allow handling of incoming
-requests by a pool of WebWorker threads.
+[*QOper8*](https://github.com/robtweed/qoper8-ww) and [*QOper8-cp*](https://github.com/robtweed/qoper8-cp) Modules with Stric, to allow handling of incoming
+requests by a pool of WebWorkers or Child Processes respectively.
 
 When using *QOper8*, messages are placed in a queue, from where they are dispatched to an available
-WebWorker and handled by a module of your choice.  
+Worker and handled by a module of your choice.  
 
 This queue-based design creates a highly-scalable architecture for handling a large amount of messages, particularly if some require significant CPU resources, since the load imposed by handling the messages is off-loaded to a 
-WebWorker, Worker Thread or Child Process.  An interesting aspect of *QOper8* is that each WebWorker only handles a single message at a time, meaning that within the WebWorker, concurrency is not an issue.  *qoper8-stric* Handlers can therefore safely use synchronous APIs if required.
+WebWorker, Worker Thread or Child Process.  An interesting aspect of the *QOper8* Modules is that each Worker only handles a single message at a time, meaning that within the Worker, concurrency is not an issue.  *qoper8-stric* Handlers can therefore safely use synchronous APIs if required.
 
-The *QOper8* module itself is extremely fast: benchmarks on a standard M1 Mac Mini have shown that *QOper8*'s
-throughput can exceed 160,000 messages/second when used with a pool of 8 WebWorkers.
+The *QOper8* modules themselves are extremely fast: benchmarks on a standard M1 Mac Mini have shown that *QOper8*'s
+throughput can exceed 160,000 messages/second when used with a pool of 8 WebWorkers, with only slightly less
+throughput when using Child Process Workers.
 
 
 ## API Handling
 
-*qoper8-stric* does not limit you to handling all requests in WebWorkers.
+*qoper8-stric* does not limit you to handling all requests in Workers.
 
 You can use all of Stric's other functionality, so you can have a mixture of:
 
@@ -64,8 +65,10 @@ Installing *qoper8-stric* will also install the following as dependencies:
   - whether or not you want the QOoper8 module to log its activity to the console (which is recommended during development)
 
         const options = {
+          mode: 'child_process',    // defaults to 'webworker'
           logging: true,            // defaults to false if not specified
           poolSize: 3               // we will use up to 3 Workers, depending on activity levels 
+          exitOnStop: true          // ensures that the process exits when QOper8 is stopped
         }
 
 
@@ -76,7 +79,7 @@ Full details of the startup options for
 - You can now invoke the *qoper8-stric* Plugin:
 
 
-        QOper8_Plugin(router, options);
+        let qoper8 = await QOper8_Plugin(router, options);
 
 
 ## Handling Incoming Requests within QOper8 WebWorkers
@@ -98,8 +101,10 @@ module named *helloworld.js*, you would change the *options* object to:
 
 
         const options = {
+          mode: 'child_process',
           logging: true,
           poolSize: 3,
+          exitOnStop: true,
           workerHandlersByRoute: [
             {
               method: 'get',
@@ -112,8 +117,7 @@ module named *helloworld.js*, you would change the *options* object to:
 
 
 As a result of the steps shown above, the *qoper8-stric* PlugIn will automatically use *QOper8* 
-to route all incoming instances of *GET /helloworld* to a WebWorker, where they will be handled by your 
-*helloworld.js* module.
+to route all incoming instances of *GET /helloworld* to a Worker (in this example a Child Process), where they will be handled by your *helloworld.js* module.
 
 *qoper8-stric* generates the associated Stric Router functions automatically for you from the information 
 you supply in the *workerHandlersByRoute* array.
@@ -123,7 +127,7 @@ you supply in the *workerHandlersByRoute* array.
 
 ### Structure/Pattern
 
-*QOper8* WebWorker Message Handler Modules must export a function with two arguments:
+*QOper8* Worker Message Handler Modules must export a function with two arguments:
 
 - *messageObj*: the incoming HTTP request, as repackaged for you by *qoper8-stric*
 
@@ -240,6 +244,7 @@ For full details about QOper8 Worker Startup Modules, see the
         const options = {
           logging: false,
           poolSize: 2,
+          exitOnStop: true,
           workerHandlersByRoute: [
             {
               method: 'get',
@@ -249,7 +254,7 @@ For full details about QOper8 Worker Startup Modules, see the
           ]
         }
 
-        QOper8_Plugin(router, options);
+        let qoper8 = await QOper8_Plugin(router, options);
 
         router.use(404, (req) => {
           return Response.json({error: 'Unrecognised request'}, {status: 401});
@@ -259,7 +264,6 @@ For full details about QOper8 Worker Startup Modules, see the
 
 
 ### helloWorld.js
-
 
         const handler = function(messageObj, finished) {
        
@@ -274,8 +278,6 @@ For full details about QOper8 Worker Startup Modules, see the
         };
 
         export {handler};
-
-
 
 ----
 
@@ -384,27 +386,44 @@ For example:
       });
 
 
-## Performance
+## Handling QOper8 Events
 
-Routing a request to be handled in a WebWorker inevitably adds some additional overhead to the round-trip
-(ie incoming request => outgoing response) time.  The question is how much?
+The *QOper8* modules emit a number of events that you may want to make use of within your application.
 
-Some simple tests were performed using *cURL* making *localhost* calls to a Stric script with two 
-"hello world" API routes, one running within the main thread, the other routed via QOper8 to a WebWorker.
+The active *qoper8* object is returned by the Plugin:
 
-The tests were run on a Ubuntu Linux VM running on a basic M1 Mac Mini using Parallels.
+        let qoper8 = await QOper8_Plugin(router, options);
 
-The cURL command used for each API route was of the form:
+You can therefore use its *on()* method, for example, to see when/if workers are started and to see a count of requests handled by each worker, eg:
 
-        curl -o /dev/null -s -w 'Total: %{time_total}s\n' http://localhost:3000/helloworld
+        let counts = {};
 
+        qoper8.on('workerStarted', function(id) {
+          console.log('worker ' + id + ' started');
+        });
 
-Average round-trip times were:
+        qoper8.on('workerStopped', function(id) {
+          console.log('worker ' + id + ' stopped');
+          delete counts[id];
+        });
 
-- main thread: 0.0024 sec  (range: 0.0014 - 0.0028)
-- WebWorker:   0.0046 sec  (range: 0.0038 - 0.0053)
+        qoper8.on('replyReceived', function(res) {
+          let id = res.workerId;
+          if (!counts[id]) counts[id] = 0;
+          counts[id]++;
+        });
 
-So on average on this platform, processing a request in a WebWorker added 2ms to the total round-trip time.
+        let countTimer = setInterval(() => {
+          console.log('messages handled:');
+          for (let id in counts) {
+            console.log(id + ': ' + counts[id]);
+          }
+          console.log('-----');
+        }, 20000);
+
+        qoper8.on('stop', () => {
+          clearInterval(countTimer);
+        });
 
 
 
