@@ -1,6 +1,6 @@
 {
   "name": "qoper8-stric",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "description": "QOper8 Plugin for Stric",
   "type": "module",
   "main": "./src/qoper8-stric-plugin.js",
@@ -20,6 +20,7 @@
   "author": "Rob Tweed, MGateway Ltd",
   "license": "Apache-2.0",
   "dependencies": {
+    "@stricjs/router": "latest",
     "@stricjs/utils": "latest",
     "qoper8-ww": "latest"
   },
