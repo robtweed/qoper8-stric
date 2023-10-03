@@ -23,18 +23,13 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-28 September 2023
+1 October 2023
 
 */
 
 import {query as parse} from '@stricjs/utils';
 import {URL} from 'url';
 import crypto from 'crypto';
-import path from 'path';
-import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-let relPath = __dirname.split(process.cwd() + '/')[1];
 
 async function QOper8_Plugin (router, options) {
 
@@ -50,13 +45,6 @@ async function QOper8_Plugin (router, options) {
   } 
   else {
     qmodule = await import('qoper8-wt');
-  }
-
-  if (options.mgdbx) {
-    options.onStartup = {
-      module: relPath + '/mgdbx-worker-startup.mjs',
-      arguments: options.mgdbx
-    }
   }
 
   const qoper8 = new qmodule.QOper8(options);
