@@ -45,6 +45,7 @@ You can use all of Stric's other functionality, so you can have a mixture of:
 Installing *qoper8-stric* will also install the following as dependencies:
 
   - @stricjs/utils
+  - qoper8-cp
   - qoper8-ww
 
 
