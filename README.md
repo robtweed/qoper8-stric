@@ -53,12 +53,22 @@ Installing *qoper8-stric* will also install the following as dependencies:
 
 *qoper8-stric* is implemented as a Plug-in.  To configure it for use with Stric:
 
-- First, import the Stric Router module and *qoper8-stric*, and instantiate the Stric Router, eg:
+- First, import the Stric App and routes modules along with *qoper8-stric*
 
-        import { Router } from '@stricjs/router';
+        import { App, routes } from '@stricjs/app';
         import {QOper8_Plugin} from 'qoper8-stric';
+
+Then instantiate the Stric App and create the baseline *router* object:
+
+        let app = new App({
+          serve: {
+            port: 8080,
+            hostname: '0.0.0.0'
+          }
+        });
         
-        let router =  new Router();
+        let router = routes();
+
 
 - Next, determine any QOper8 startup options, such as:
 
@@ -81,6 +91,22 @@ Full details of the startup options for
 
 
         let qoper8 = await QOper8_Plugin(router, options);
+
+- let's add a couple of locally-handled routes:
+
+        router.get('/local', async (ctx) => {
+          return Response.json({local: 'test ran ok'}, {status: 200});
+        });
+
+        router.get('/*', async (ctx) => {
+          // this will handle any other incoming request URLs
+          return Response.json({error: 'Unrecognised request'}, {status: 401});
+        });
+
+- and finally, we add these routes to Stric and start it up:
+
+        app.routes.extend(router);
+        app.build(true);
 
 
 ## Handling Incoming Requests within QOper8 WebWorkers
@@ -234,16 +260,23 @@ For full details about QOper8 Worker Startup Modules, see the
 
 ### main.js
 
-
-        import { Router } from '@stricjs/router';
+        import { App, routes } from '@stricjs/app';
         import {QOper8_Plugin} from 'qoper8-stric';
 
-        let router =  new Router({port: 3000});
+        let app = new App({
+          serve: {
+            port: 8080,
+            hostname: '0.0.0.0'
+          }
+        });
 
-        // Create 2 routes that will be handled in a WebWorker
+        let router = routes();
+
+        // Create 2 routes that will be handled by a pool of two Child Process workers
 
         const options = {
-          logging: false,
+          mode: 'child_process',
+          logging: true,
           poolSize: 2,
           exitOnStop: true,
           workerHandlersByRoute: [
@@ -257,11 +290,14 @@ For full details about QOper8 Worker Startup Modules, see the
 
         let qoper8 = await QOper8_Plugin(router, options);
 
-        router.use(404, (req) => {
+        router.get('/*', async (ctx) => {
           return Response.json({error: 'Unrecognised request'}, {status: 401});
         });
 
-        export default router;
+        app.routes.extend(router);
+        app.build(true);
+
+
 
 
 ### helloWorld.js
@@ -430,7 +466,7 @@ You can therefore use its *on()* method, for example, to see when/if workers are
 
 ## License
 
- Copyright (c) 2023 MGateway Ltd,                           
+ Copyright (c) 2023-24 MGateway Ltd,                           
  Redhill, Surrey UK.                                                      
  All rights reserved.                                                     
                                                                            
