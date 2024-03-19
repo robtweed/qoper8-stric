@@ -1,7 +1,15 @@
-import { Router } from '@stricjs/router';
+import { App, routes } from '@stricjs/app';
+import { html } from '@stricjs/app/send';
 import {QOper8_Plugin} from 'qoper8-stric';
 
-let router =  new Router({port: 3000});
+let app = new App({
+  serve: {
+    port: 8080,
+    hostname: '0.0.0.0'
+  }
+});
+
+let router = routes();
 
 // Create 2 routes that will be handled by a pool of two Child Process workers
 
@@ -55,9 +63,14 @@ qoper8.on('stop', () => {
   clearInterval(countTimer);
 });
 
-router.use(404, (req) => {
+router.get('/local', async (ctx) => {
+  return Response.json({local: 'test ran ok'}, {status: 200});
+});
+
+router.get('/*', async (ctx) => {
   return Response.json({error: 'Unrecognised request'}, {status: 401});
 });
 
-export default router;
+app.routes.extend(router);
+app.build(true);
 

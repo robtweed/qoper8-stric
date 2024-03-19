@@ -2,7 +2,7 @@
  ----------------------------------------------------------------------------
  | QOper8-Stric-Plugin: Stric Plugin for dispatching requests to WebWorker   |
  |                                                                           |
- | Copyright (c) 2023 MGateway Ltd,                                          |
+ | Copyright (c) 2023-24 MGateway Ltd,                                       |
  | Redhill, Surrey UK.                                                       |
  | All rights reserved.                                                      |
  |                                                                           |
@@ -23,7 +23,7 @@
  |  limitations under the License.                                           |
  ----------------------------------------------------------------------------
 
-1 October 2023
+19 March 2024
 
 */
 
@@ -59,20 +59,29 @@ async function QOper8_Plugin (router, options) {
       qoper8.handlersByMessageType.set(name, {module: route.handlerPath});
     }
 
-    router[route.method](route.url, async (req) => {
-      let url = new URL(req.url);
+    router[route.method](route.url, async (ctx) => {
+      let url = new URL(ctx.req.url);
+
+      let body;
+      if (ctx.req.method === 'POST' || ctx.req.method === 'PUT' || ctx.req.method === 'PATCH') {
+        try {
+          body = await ctx.req.json();
+        }
+        catch(err) {
+        }
+      }
+
       let qRequest = {
-        method: req.method,
-        body: req.data,
-        headers: Object.fromEntries(req.headers.entries()),
-        url: url.pathname,
+        method: ctx.req.method,
+        body: body,
+        headers: Object.fromEntries(ctx.req.headers.entries()),
+        url: ctx.req.url,
         hostname: url.hostname,
         protocol: url.protocol,
-        query: {},
-        params: req.params,
+        params: ctx.params,
+        query: Object.fromEntries(url.searchParams.entries()),
         routerPath: route.url
       };
-      if (req.query !== -1) qRequest.query = parse(req.url.substring(req.query + 1));
 
       let res = await qoper8.send({
         type: name,

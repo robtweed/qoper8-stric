@@ -1,0 +1,17 @@
+Start the web server:
+
+  bun ws.js
+
+
+It listens on port 8080
+
+Try:
+
+curl http://localhost:8080/helloworld
+
+curl http://localhost:8080/user/rob
+
+curl http://localhost:8080/user/someoneelse
+
+curl http://localhost:8080/invalidurl
+

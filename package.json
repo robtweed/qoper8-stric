@@ -1,6 +1,6 @@
 {
   "name": "qoper8-stric",
-  "version": "1.3.0",
+  "version": "2.0.1",
   "description": "QOper8 Plugin for Stric",
   "type": "module",
   "main": "./src/qoper8-stric-plugin.js",
@@ -22,6 +22,7 @@
   "dependencies": {
     "@stricjs/router": "latest",
     "@stricjs/utils": "latest",
+    "@stricjs/app": "latest",
     "qoper8-ww": "latest",
     "qoper8-cp": "latest"
   },
